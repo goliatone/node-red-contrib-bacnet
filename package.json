@@ -1,0 +1,24 @@
+{
+  "name": "node-red-contrib-bacnet",
+  "version": "0.0.0",
+  "description": "Node-RED contrib node to support BACnet systems",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goliatone/node-red-contrib-bacnet.git"
+  },
+  "keywords": [
+    "bacnet",
+    "automation",
+    "iot"
+  ],
+  "author": "goliatone <hello@goliatone.com> (http://goliatone.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/goliatone/node-red-contrib-bacnet/issues"
+  },
+  "homepage": "https://github.com/goliatone/node-red-contrib-bacnet#readme"
+}
