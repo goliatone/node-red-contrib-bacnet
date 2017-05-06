@@ -23,5 +23,9 @@
   "homepage": "https://github.com/goliatone/node-red-contrib-bacnet#readme",
   "dependencies": {
     "bacstack": "0.0.1-beta.4"
+  },
+  "node-red": {
+    "nodes": {
+    }
   }
 }
