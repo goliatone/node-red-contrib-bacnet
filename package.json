@@ -20,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/goliatone/node-red-contrib-bacnet/issues"
   },
-  "homepage": "https://github.com/goliatone/node-red-contrib-bacnet#readme"
+  "homepage": "https://github.com/goliatone/node-red-contrib-bacnet#readme",
+  "dependencies": {
+    "bacstack": "0.0.1-beta.4"
+  }
 }
