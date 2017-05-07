@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="bacnet-client">
+<script type="text/x-red" data-template-name="bacnet-server">
     <div class="form-row">
         <label for="node-config-input-interface"><i class="icon-bookmark"></i> Interface</label>
         <input type="text" id="node-config-input-interface">
@@ -8,16 +8,16 @@
         <input type="text" id="node-config-input-port">
     </div>
     <div class="form-row">
-        <label for="node-config-input-broadcast-address"><i class="icon-bookmark"></i> Broadcast Address</label>
-        <input type="text" id="node-config-broadcast-address">
+        <label for="node-config-input-broadcastAddress"><i class="icon-bookmark"></i> Broadcast Address</label>
+        <input type="text" id="node-config-input-broadcastAddress">
     </div>
     <div class="form-row1">
-        <label for="node-config-input-adpu-timeout"><i class="fa fa-clock-o"></i> Connection Timeout (s)</label>
-        <input type="text" id="node-config-input-adpu-timeout">
+        <label for="node-config-input-timeout"><i class="fa fa-clock-o"></i> Connection Timeout (s)</label>
+        <input type="text" id="node-config-input-timeout">
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="bacnet-client">
+<script type="text/x-red" data-help-name="bacnet-server">
     <p>To be able to communicate to BACNET devices, you have to initialize a new client instance.</p>
     <p>
         <ul>
@@ -31,4 +31,166 @@
             </li>
         </ul>
     </p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('bacnet-server', {
+        category: 'config',
+        defaults: {
+            interface: {value: '', required: true},
+            port: {value: 47808, required: true, validate: RED.validators.number()},
+            broadcastAddress: {value: '255.255.255.255', required: true},
+            timeout: {value: 3000, required: false, validate: RED.validators.number()}
+        },
+        label: function () {
+            return "bacnet@" + this.host + ":" + this.port;
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="bacnet-read">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-address"><i class="icon-bookmark"></i> Address</label>
+        <input type="text" id="node-input-address" placeholder="">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-objectType"><i class="icon-bookmark"></i> Object Type</label>
+        <input type="text" id="node-input-objectType" placeholder="">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-objectInstance"><i class="icon-bookmark"></i> Object Instance</label>
+        <input type="text" id="node-input-objectInstance" placeholder="">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-propertyId"><i class="icon-bookmark"></i> Property ID</label>
+        <input type="text" id="node-input-propertyId" placeholder="">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-arrayIndex"><i class="icon-bookmark"></i> Array Index</label>
+        <input type="text" id="node-input-arrayIndex" placeholder="">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="icon-globe"></i> Server</label>
+        <input type="text" id="node-input-server">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="bacnet-read">
+<p>The <code>readProperty</code> command reads a single property of an object from a device.</p>
+<ul>
+    <li><code>address</code> <em>[string]</em> - IP address of the target device.</li>
+    <li><code>objectType</code> <em>[number]</em> - The BACNET object type to read.</li>
+    <li><code>objectInstance</code> <em>[number]</em> - The BACNET object instance to read.</li>
+    <li><code>propertyId</code> <em>[number]</em> - The BACNET property id in the specified object to read.</li>
+    <li><code>arrayIndex</code> <em>[number]</em> - The array index of the property to be read.</li>
+    <li><code>next</code> <em>[Function]</em> - The callback containing an error, in case of a failure and value object in case of success.</li>
+</ul>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('bacnet-read', {
+        category: 'input',
+        color: '#E9967A',
+        defaults: {
+            name: {value: ''},
+            address: {value: '', required: true},
+            objectType: {value: '', required: true, validate: RED.validators.number()},
+            objectInstance: {value: '', required: true, validate: RED.validators.number()},
+            propertyId: {value: '', required: true, validate: RED.validators.number()},
+            arrayIndex: {value: null, validate: RED.validators.number()},
+            server: {value: '', type: 'bacnet-server'}
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: 'bridge.png',
+        paletteLabel: 'bacnet',
+        label: function () {
+            return (this.name || 'bacnet');
+        }
+    });
+</script>
+
+
+<script type="text/x-red" data-template-name="bacnet-write">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-address"><i class="icon-bookmark"></i> Address</label>
+        <input type="text" id="node-input-address" placeholder="">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-objectType"><i class="icon-bookmark"></i> Object Type</label>
+        <input type="text" id="node-input-objectType" placeholder="">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-objectInstance"><i class="icon-bookmark"></i> Object Instance</label>
+        <input type="text" id="node-input-objectInstance" placeholder="">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-propertyId"><i class="icon-bookmark"></i> Property ID</label>
+        <input type="text" id="node-input-propertyId" placeholder="">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-priority"><i class="icon-bookmark"></i> Priority</label>
+        <input type="text" id="node-input-priority" placeholder="">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="icon-globe"></i> Server</label>
+        <input type="text" id="node-input-server">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="bacnet-write">
+    <p>The <code>writeProperty</code> command writes a single property of an object to a device.</p>
+    <ul>
+        <li><code>address</code> <em>[string]</em> - IP address of the target device.</li>
+        <li><code>objectType</code> <em>[number]</em> - The BACNET object type to write.</li>
+        <li><code>objectInstance</code> <em>[number]</em> - IP address of the target device.</li>
+        <li><code>propertyId</code> <em>[number]</em> - The BACNET property id in the specified object to write.</li>
+        <li><code>priority</code> <em>[number]</em> - The priority to be used for writing to the property.</li>
+        <li><code>valueList</code> <em>[array]</em> - A list of values to be written to the speicifed property. The <code>Tag</code> value has to be a <code>BacnetApplicationTags</code> declaration as specified in <code>lib/bacnet-enum.js</code>.</li>
+        <li><code>next</code> <em>[Function]</em> - The callback containing an error, in case of a failure and value object in case of success.</li>
+    </ul>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('bacnet-write', {
+        category: 'output',
+        color: '#E9967A',
+        defaults: {
+            name: {value: ''},
+            address: {value: '', required: true},
+            objectType: {value: '', required: true, validate: RED.validators.number()},
+            objectInstance: {value: '', required: true, validate: RED.validators.number()},
+            propertyId: {value: '', required: true, validate: RED.validators.number()},
+            priority: {value: '', validate: RED.validators.number()},
+            //TODO: How to make this easy?
+            valueList: {value: '', required: true}
+            server: {value: '', type: 'bacnet-server'}
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: 'bridge.png',
+        align: 'right',
+        paletteLabel: 'bacnet',
+        label: function () {
+            return (this.name || 'bacnet');
+        }
+    });
 </script>
