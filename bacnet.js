@@ -1,5 +1,5 @@
 'use strict';
-
+const debug = require('debug')('node_red_contrib_bacnet')
 
 module.exports = function (RED) {
     const bacnet = require('bacstack');
@@ -7,7 +7,7 @@ module.exports = function (RED) {
     /**
      * Backnet Server Node
      */
-    function BacnetClientNode(config) {
+    function BacnetServerNode(config) {
         RED.nodes.createNode(this, config);
 
         this.port = config.port;
@@ -21,7 +21,7 @@ module.exports = function (RED) {
             port: this.port,                          // Use BAC1 as communication port
             interface: this.interface,                // Listen on a specific interface
             broadcastAddress: this.broadcastAddress,  // Use the subnet broadcast address
-            adpuTimeout: this.adpuTimeout             // Wait twice as long for response
+            adpuTimeout: this.timeout                 // Wait twice as long for response
         };
 
         let node = this;
@@ -48,15 +48,27 @@ module.exports = function (RED) {
             node.client = null;
         });
     }
-    RED.nodes.registerType('bacnet-client', BacnetClientNode);
+    RED.nodes.registerType('bacnet-server', BacnetServerNode);
 
     /**
      * BacnetDiscovery
      * The whoIs command discovers all BACnet
      * devices in the network.
+     *
+     * lowLimit [number] - Minimal device instance number to search for. Optional.
+     * highLimit [number] - Maximal device instance number to search for. Optional.
+     * address [string] - Unicast address if command should device directly. Optional.
      */
     function BacnetDiscovery(config) {
         RED.nodes.createNode(this, config);
+
+        this.name = config.name;
+
+        client.on('iAm', function(address, deviceId, maxAdpu, segmentation, vendorId) {
+            log('address: ', address, ' - deviceId: ', deviceId, ' - maxAdpu: ', maxAdpu, ' - segmentation: ', segmentation, ' - vendorId: ', vendorId);
+        });
+
+        client.whoIs();
     }
     RED.nodes.registerType('bacnet-discovery', BacnetDiscovery);
 
@@ -65,16 +77,33 @@ module.exports = function (RED) {
      *
      * The readProperty command reads a single
      * property of an object from a device.
+     *
+     * address [string] - IP address of the target device.
+     * objectType [number] - The BACNET object type to read.
+     * objectInstance [number] - The BACNET object instance to read.
+     * propertyId [number] - The BACNET property id in the specified object to read.
+     * arrayIndex [number] - The array index of the property to be read.
+     * next [function] - The callback containing an error, in case of a failure and value object in case of success.
      */
     function BacnetReadProperty(config) {
         RED.nodes.createNode(this, config);
         this.name = config.name;
 
+        this.address = config.address;
+        this.objectType = config.objectType;
+        this.objectInstance = config.objectInstance;
+        this.propertyId = config.propertyId;
+        this.arrayIndex = config.arrayIndex;
+
 
         this.connection = null;
 
         let node = this;
-        let bacnetClient = RED.nodes.getNode(config.server);
+        let server = RED.nodes.getNode(config.server);
+
+        server.readProperty(this.address, this.objectType, this.objectInstance, this.propertyId, this.arrayIndex, function(err, value) {
+            log('value: ', value);
+        });
     }
 
     RED.nodes.registerType('bacnet-read', BacnetReadProperty);
@@ -84,20 +113,45 @@ module.exports = function (RED) {
      *
      * The writeProperty command writes a single
      * property of an object to a device.
+     *
+     * address [string] - IP address of the target device.
+     * objectType [number] - The BACNET object type to write.
+     * objectInstance [number] - IP address of the target device.
+     * propertyId [number] - The BACNET property id in the specified object to write.
+     * priority [number] - The priority to be used for writing to the property.
+     * valueList [array] - A list of values to be written to the speicifed property. The Tag value has to be a BacnetApplicationTags declaration as specified in lib/bacnet-enum.js.
+     * next [function] - The callback containing an error, in case of a failure and value object in case of success.
      */
     function BacnetWriteProperty(config) {
         RED.nodes.createNode(this, config);
+
+        this.name = config.name;
+
+        this.address = config.address;
+        this.objectType = config.objectType;
+        this.objectInstance = config.objectInstance;
+        this.propertyId = config.propertyId;
+        this.priority = config.priority;
+        this.valueList = config.valueList;
+
+        this.connection = null;
+
+        let node = this;
+        let server = RED.nodes.getNode(config.server);
+        server.writeProperty(this.address, this.objectType, this.objectInstance, this.propertyId, this.priority, this.valueList, function(err, value) {
+            log('value: ', value);
+        });
     }
     RED.nodes.registerType('bacnet-write', BacnetWriteProperty);
 
     /**
-     * Bacnet Read Property
+     * Bacnet Read Multiple Property
      *
      * The readPropertyMultiple command
      * reads multiple properties in multiple
      * objects from a device.
      */
-    function BacnetReadProperty(config) {
+    function BacnetReadProperties(config) {
         RED.nodes.createNode(this, config);
         this.name = config.name;
 
@@ -108,7 +162,7 @@ module.exports = function (RED) {
         let bacnetClient = RED.nodes.getNode(config.server);
     }
 
-    RED.nodes.registerType('bacnet-read-multiple', BacnetReadProperty);
+    RED.nodes.registerType('bacnet-read-multiple', BacnetReadProperties);
 };
 
 
