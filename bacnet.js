@@ -29,7 +29,7 @@ module.exports = function (RED) {
         node.initializeBacnetConnection = function() {
             log('Connecting to BACnet using ' + node.interface + ':' + node.port + '. Broadcasting to ' + node.broadcastAddress);
 
-            node.client = backnet(options);
+            node.client = bacnet(options);
 
             //@TODO: bacstack currently does not emit errors.
             node.client.on('error', (err) => {
