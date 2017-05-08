@@ -2,7 +2,9 @@
 const debug = require('debug')('node_red_contrib_bacnet');
 
 module.exports = function (RED) {
-    const bacnet = require('bacstack');
+
+    // const bacnet = require('bacstack');
+    const Bacnet = require('./lib/bacnet');
 
     /**
      * Backnet Server Node
@@ -16,6 +18,21 @@ module.exports = function (RED) {
         this.interface = config.interface;
         this.broadcastAddress = config.broadcastAddress;
         this.adpuTimeout = config.timeout;
+
+        this.connection = new Bacnet(config);
+
+        this.whoIs = function(options) {
+            return this.connection.whoIs(options);
+        };
+
+        this.writeProperty = function(options) {
+            return this.connection.writeProperty(options);
+        };
+
+        this.readProperty = function(options) {
+            return this.connection.readProperty(options);
+        };
+
     }
     RED.nodes.registerType('bacnet-server', BacnetServerNode);
 
@@ -33,23 +50,36 @@ module.exports = function (RED) {
 
         this.name = config.name;
 
-        let options = RED.nodes.getNode(config.server);
-
         this.status({fill:'green', shape: 'dot', text: 'connected'});
 
-        return;
+        let server = RED.nodes.getNode(config.server);
 
-        let client = bacnet(options);
+        server.whoIs(config).then((devices)=>{
+            let msg = {
+                payload: {
+                    devices: devices
+                }
+            };
 
-        client.on('iAm', (address, deviceId, maxAdpu, segmentation, vendorId) => {
-            log('address: ', address, ' - deviceId: ', deviceId, ' - maxAdpu: ', maxAdpu, ' - segmentation: ', segmentation, ' - vendorId: ', vendorId);
+            this.send(msg);
+        }).catch((err)=> {
+            log('Error discovering', err);
+            this.error('Error discovering BACnet devices. ', err);
         });
 
-        let lowLimit = config.lowLimit,
-            highLimit = config.highLimit,
-            address = config.address;
-
-        client.whoIs(lowLimit, highLimit, address);
+        // return;
+        //
+        // let client = bacnet(options);
+        //
+        // client.on('iAm', (address, deviceId, maxAdpu, segmentation, vendorId) => {
+        //     log('address: ', address, ' - deviceId: ', deviceId, ' - maxAdpu: ', maxAdpu, ' - segmentation: ', segmentation, ' - vendorId: ', vendorId);
+        // });
+        //
+        // let lowLimit = config.lowLimit,
+        //     highLimit = config.highLimit,
+        //     address = config.address;
+        //
+        // client.whoIs(lowLimit, highLimit, address);
     }
     RED.nodes.registerType('bacnet-discovery', BacnetDiscovery);
 
@@ -81,11 +111,22 @@ module.exports = function (RED) {
         let node = this;
         let server = RED.nodes.getNode(config.server);
 
-        return;
-
-        server.readProperty(this.address, this.objectType, this.objectInstance, this.propertyId, this.arrayIndex, function(err, value) {
-            log('value: ', value);
+        server.readProperty(config).then((value) => {
+            let msg = {
+                payload: {
+                    value: value
+                }
+            };
+            this.send(msg);
+        }).catch((err)=> {
+            this.error('Error discovering BACnet devices. ', err);
         });
+        //
+        // return;
+        //
+        // server.readProperty(this.address, this.objectType, this.objectInstance, this.propertyId, this.arrayIndex, function(err, value) {
+        //     log('value: ', value);
+        // });
     }
 
     RED.nodes.registerType('bacnet-read', BacnetReadProperty);
@@ -134,10 +175,28 @@ module.exports = function (RED) {
             valueList
         );
 
-        this.connection = null;
+        let options = {
+            address,
+            objectType,
+            objectInstance,
+            propertyId,
+            priority,
+            valueList
+        };
 
         let node = this;
         let server = RED.nodes.getNode(config.server);
+        server.writeProperty(options).then((value) => {
+            let msg = {
+                payload: {
+                    value: value
+                }
+            };
+            this.send(msg);
+        }).catch((err)=> {
+            this.error('Error discovering BACnet devices. ', err);
+        });
+
         // server.writeProperty(this.address, this.objectType, this.objectInstance, this.propertyId, this.priority, this.valueList, function(err, value) {
         //     log('value: ', value);
         // });
