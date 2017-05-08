@@ -1,5 +1,5 @@
 'use strict';
-const debug = require('debug')('node_red_contrib_bacnet')
+const debug = require('debug')('node_red_contrib_bacnet');
 
 module.exports = function (RED) {
     const bacnet = require('bacstack');
@@ -63,6 +63,9 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
 
         this.name = config.name;
+
+        let options = RED.nodes.getNode(config.server);
+        let client = bacnet(options);
 
         client.on('iAm', function(address, deviceId, maxAdpu, segmentation, vendorId) {
             log('address: ', address, ' - deviceId: ', deviceId, ' - maxAdpu: ', maxAdpu, ' - segmentation: ', segmentation, ' - vendorId: ', vendorId);
