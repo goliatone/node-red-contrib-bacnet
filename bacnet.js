@@ -10,43 +10,12 @@ module.exports = function (RED) {
     function BacnetServerNode(config) {
         RED.nodes.createNode(this, config);
 
+        log('Create node: %s:%s %s', config.interface, config.port, config.broadcastAddress, config.adpuTimeout);
+
         this.port = config.port;
         this.interface = config.interface;
         this.broadcastAddress = config.broadcastAddress;
-        this.adpuTimeout = config.adpuTimeout;
-
-        this.client = null;
-
-        let options = {
-            port: this.port,                          // Use BAC1 as communication port
-            interface: this.interface,                // Listen on a specific interface
-            broadcastAddress: this.broadcastAddress,  // Use the subnet broadcast address
-            adpuTimeout: this.timeout                 // Wait twice as long for response
-        };
-
-        let node = this;
-
-        node.initializeBacnetConnection = function() {
-            log('Connecting to BACnet using ' + node.interface + ':' + node.port + '. Broadcasting to ' + node.broadcastAddress);
-
-            node.client = bacnet(options);
-
-            //@TODO: bacstack currently does not emit errors.
-            node.client.on('error', (err) => {
-                log('BACnet connection error');
-                log(err.message);
-                log(err.stack);
-                node.error('BACnet connection: ' + err.message);
-            });
-            return Promise.resolve(this.client);
-        };
-
-        node.on('close', ()=>{
-            log('Disconnecting from BACnet at '+ node.interface + ':' + node.port);
-            //@TODO bacstack does not implement a close method
-            // node.client.close();
-            node.client = null;
-        });
+        this.adpuTimeout = config.timeout;
     }
     RED.nodes.registerType('bacnet-server', BacnetServerNode);
 
@@ -65,13 +34,22 @@ module.exports = function (RED) {
         this.name = config.name;
 
         let options = RED.nodes.getNode(config.server);
+
+        this.status({fill:'green', shape: 'dot', text: 'connected'});
+
+        return;
+
         let client = bacnet(options);
 
-        client.on('iAm', function(address, deviceId, maxAdpu, segmentation, vendorId) {
+        client.on('iAm', (address, deviceId, maxAdpu, segmentation, vendorId) => {
             log('address: ', address, ' - deviceId: ', deviceId, ' - maxAdpu: ', maxAdpu, ' - segmentation: ', segmentation, ' - vendorId: ', vendorId);
         });
 
-        client.whoIs();
+        let lowLimit = config.lowLimit,
+            highLimit = config.highLimit,
+            address = config.address;
+
+        client.whoIs(lowLimit, highLimit, address);
     }
     RED.nodes.registerType('bacnet-discovery', BacnetDiscovery);
 
@@ -98,11 +76,12 @@ module.exports = function (RED) {
         this.propertyId = config.propertyId;
         this.arrayIndex = config.arrayIndex;
 
-
         this.connection = null;
 
         let node = this;
         let server = RED.nodes.getNode(config.server);
+
+        return;
 
         server.readProperty(this.address, this.objectType, this.objectInstance, this.propertyId, this.arrayIndex, function(err, value) {
             log('value: ', value);
@@ -110,6 +89,7 @@ module.exports = function (RED) {
     }
 
     RED.nodes.registerType('bacnet-read', BacnetReadProperty);
+
 
     /**
      * Write Property
@@ -130,42 +110,40 @@ module.exports = function (RED) {
 
         this.name = config.name;
 
-        this.address = config.address;
-        this.objectType = config.objectType;
-        this.objectInstance = config.objectInstance;
-        this.propertyId = config.propertyId;
-        this.priority = config.priority;
-        this.valueList = config.valueList;
+        log('Create write property: %s %s %s', config.address, config.objectType, config.name);
+
+        var address = this.address = config.address;
+        var objectType = this.objectType = config.objectType;
+        var objectInstance = this.objectInstance = config.objectInstance;
+        var propertyId = this.propertyId = config.propertyId;
+        var priority = this.priority = config.priority;
+        var applicationTag = this.applicationTag = config.applicationTag;
+        var value = this.value = config.value;
+
+        var valueList = this.valueList = [{
+            Tag: applicationTag,
+            Value: value
+        }];
+
+        log('Write property: %s %s %s %s %s %j',
+            address,
+            objectType,
+            objectInstance,
+            propertyId,
+            priority,
+            valueList
+        );
 
         this.connection = null;
 
         let node = this;
         let server = RED.nodes.getNode(config.server);
-        server.writeProperty(this.address, this.objectType, this.objectInstance, this.propertyId, this.priority, this.valueList, function(err, value) {
-            log('value: ', value);
-        });
+        // server.writeProperty(this.address, this.objectType, this.objectInstance, this.propertyId, this.priority, this.valueList, function(err, value) {
+        //     log('value: ', value);
+        // });
     }
     RED.nodes.registerType('bacnet-write', BacnetWriteProperty);
 
-    /**
-     * Bacnet Read Multiple Property
-     *
-     * The readPropertyMultiple command
-     * reads multiple properties in multiple
-     * objects from a device.
-     */
-    function BacnetReadProperties(config) {
-        RED.nodes.createNode(this, config);
-        this.name = config.name;
-
-
-        this.connection = null;
-
-        let node = this;
-        let bacnetClient = RED.nodes.getNode(config.server);
-    }
-
-    RED.nodes.registerType('bacnet-read-multiple', BacnetReadProperties);
 };
 
 
@@ -176,9 +154,11 @@ function timestamp() {
         replace(/\..+/, '');
 }
 
-function log(msg, args) {
+function log(msg, ...args) {
+    let message = ['BACnet @' + timestamp() + ': ' + msg];
+
     if (args) {
-        return console.log(timestamp() + ': ' + msg, args);
+        args = message.concat(args);
     }
-    console.log(timestamp() + ': ' + msg);
+    console.log.apply(console, args);
 }
