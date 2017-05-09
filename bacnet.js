@@ -20,7 +20,7 @@ module.exports = function (RED) {
         this.adpuTimeout = config.timeout;
 
         this.connection = new Bacnet(config);
-
+        
         this.whoIs = function(options) {
             return this.connection.whoIs(options);
         };
@@ -66,20 +66,6 @@ module.exports = function (RED) {
             log('Error discovering', err);
             this.error('Error discovering BACnet devices. ', err);
         });
-
-        // return;
-        //
-        // let client = bacnet(options);
-        //
-        // client.on('iAm', (address, deviceId, maxAdpu, segmentation, vendorId) => {
-        //     log('address: ', address, ' - deviceId: ', deviceId, ' - maxAdpu: ', maxAdpu, ' - segmentation: ', segmentation, ' - vendorId: ', vendorId);
-        // });
-        //
-        // let lowLimit = config.lowLimit,
-        //     highLimit = config.highLimit,
-        //     address = config.address;
-        //
-        // client.whoIs(lowLimit, highLimit, address);
     }
     RED.nodes.registerType('bacnet-discovery', BacnetDiscovery);
 
@@ -121,12 +107,6 @@ module.exports = function (RED) {
         }).catch((err)=> {
             this.error('Error discovering BACnet devices. ', err);
         });
-        //
-        // return;
-        //
-        // server.readProperty(this.address, this.objectType, this.objectInstance, this.propertyId, this.arrayIndex, function(err, value) {
-        //     log('value: ', value);
-        // });
     }
 
     RED.nodes.registerType('bacnet-read', BacnetReadProperty);
@@ -196,10 +176,6 @@ module.exports = function (RED) {
         }).catch((err)=> {
             this.error('Error discovering BACnet devices. ', err);
         });
-
-        // server.writeProperty(this.address, this.objectType, this.objectInstance, this.propertyId, this.priority, this.valueList, function(err, value) {
-        //     log('value: ', value);
-        // });
     }
     RED.nodes.registerType('bacnet-write', BacnetWriteProperty);
 
