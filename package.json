@@ -23,7 +23,8 @@
   "homepage": "https://github.com/goliatone/node-red-contrib-bacnet#readme",
   "dependencies": {
     "bacstack": "0.0.1-beta.4",
-    "debug": "^2.6.6"
+    "debug": "^2.6.6",
+    "node-bacnet": "^0.1.0"
   },
   "node-red": {
     "nodes": {
