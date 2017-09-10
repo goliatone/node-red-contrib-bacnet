@@ -8,6 +8,12 @@ Uses BACnet protocol stack written in pure JavaScript. Check out [bacstack][3] t
 
 ### Install
 
+NOTE: Currently the module is not published, so you would need to use the following command:
+
+```
+$ npm install goliatone/node-red-contrib-bacnet
+```
+
 ```
 $ npm install --save node-red-contrib-bacnet
 ```
