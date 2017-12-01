@@ -8,9 +8,9 @@ module.exports = function (RED) {
         constructor(config) {
             RED.nodes.createNode(this, config);
             this.connection = new Bacnet(config);
-            this.on('close', () => this.connection.destroy())
+            this.on('close', () => this.connection.onDestroy())
             
-            this.whoIs = (...options) => this.connection.whoIs(...options);
+            this.whoIs = (options, listener) => this.connection.whoIs(options, listener);
             this.writeProperty = (options) => this.connection.writeProperty(options);
             this.readProperty = (options) => this.connection.readProperty(options);
         }
@@ -28,7 +28,7 @@ module.exports = function (RED) {
             this.status({fill:'green', shape: 'dot', text: 'connected'});
 
             const server = RED.nodes.getNode(config.server);
-            server.whoIs(config, (payload) => this.send({ payload }));
+            server.whoIs(config, (payload) => this.send({ payload: payload }));
         }
     }
     RED.nodes.registerType('bacnet-discovery', BacnetDiscovery);
@@ -48,11 +48,10 @@ module.exports = function (RED) {
         }
 
         onInput(input) {
-            console.log('got da input', input);
-            const readOptions = { ...this.defaults, ...input.payload };
+            const readOptions = Object.assign({}, this.defaults, input.payload);
             this.server.readProperty(readOptions)
-                .then((payload) => this.send({ payload }))
-                .catch((error) => this.error({ error }));
+                .then((payload) => this.send({ payload: payload }))
+                .catch((error) => this.error({ error: error }));
         };
     }
     RED.nodes.registerType('bacnet-read', BacnetReadProperty);
@@ -73,13 +72,13 @@ module.exports = function (RED) {
 
         onInput(input) {
             const valueList = [{
-                Tag: +(this.defaults.applicationTag || input.payload.applicationTag),
+                type: +(this.defaults.applicationTag || input.payload.applicationTag),
                 value: this.defaults.value || input.payload.value
             }]
-            const writeOptions = { ...this.defaults, ...input.payload, valueList };
+            const writeOptions = Object.assign({}, this.defaults, input.payload, { valueList: valueList });
             this.server.writeProperty(writeOptions)
-                .then((payload) => this.send({ payload }))
-                .catch((error) => this.error({ error }));
+                .then((payload) => this.send({ payload: payload }))
+                .catch((error) => this.error({ error: error }));
         }
     }
     RED.nodes.registerType('bacnet-write', BacnetWriteProperty);
