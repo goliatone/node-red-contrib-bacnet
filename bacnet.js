@@ -8,11 +8,7 @@ module.exports = function (RED) {
         constructor(config) {
             RED.nodes.createNode(this, config);
             this.connection = new Bacnet(config);
-            this.on('close', () => this.connection.onDestroy())
-            
-            this.whoIs = (options, listener) => this.connection.whoIs(options, listener);
-            this.writeProperty = (options) => this.connection.writeProperty(options);
-            this.readProperty = (options) => this.connection.readProperty(options);
+            this.on('close', () => this.connection.onDestroy());
         }
     }
     RED.nodes.registerType('bacnet-server', BacnetServerNode);
@@ -27,8 +23,9 @@ module.exports = function (RED) {
             RED.nodes.createNode(this, config);
             this.status({fill:'green', shape: 'dot', text: 'connected'});
 
+            const { lowLimit, highLimit, address } = config;
             const server = RED.nodes.getNode(config.server);
-            server.whoIs(config, (payload) => this.send({ payload: payload }));
+            server.connection.whoIs(lowLimit, highLimit, address, (device) => this.send({ device: device }));
         }
     }
     RED.nodes.registerType('bacnet-discovery', BacnetDiscovery);
@@ -48,9 +45,18 @@ module.exports = function (RED) {
         }
 
         onInput(input) {
-            const readOptions = Object.assign({}, this.defaults, input.payload);
-            this.server.readProperty(readOptions)
-                .then((payload) => this.send({ payload: payload }))
+            const { address, objectType, objectInstance, propertyId, arrayIndex } = Object.assign({}, this.defaults, input.device);
+            this.server.connection.readProperty(
+                address,
+                objectType,
+                objectInstance,
+                propertyId,
+                arrayIndex
+            )
+                .then((payload) => {
+                    const message = Object.assign({}, input, { payload: payload });
+                    this.send(message);
+                })
                 .catch((error) => this.error({ error: error }));
         };
     }
@@ -72,14 +78,84 @@ module.exports = function (RED) {
 
         onInput(input) {
             const valueList = [{
-                type: +(this.defaults.applicationTag || input.payload.applicationTag),
-                value: this.defaults.value || input.payload.value
-            }]
-            const writeOptions = Object.assign({}, this.defaults, input.payload, { valueList: valueList });
-            this.server.writeProperty(writeOptions)
-                .then((payload) => this.send({ payload: payload }))
+                type: +(input.payload.applicationTag || this.defaults.applicationTag),
+                value: (input.payload.value || this.defaults.value) + Math.random() * 10000
+            }];
+            const { address, objectType, objectInstance, propertyId, priority } = Object.assign({}, this.defaults, input.device, input.payload);
+            console.log('write', valueList)
+            this.server.connection.writeProperty(
+                address,
+                objectType,
+                objectInstance,
+                propertyId,
+                priority,
+                valueList
+            )
+                .then(() => this.send(input))
                 .catch((error) => this.error({ error: error }));
         }
     }
     RED.nodes.registerType('bacnet-write', BacnetWriteProperty);
+    
+        /**
+     * Bacnet Read Property Multiple
+     *
+     * The readPropertyMultiple command reads multiple properties from multiple device objects
+     */
+    class BacnetReadPropertyMultiple {
+        constructor(config) {
+            RED.nodes.createNode(this, config);
+            this.server = RED.nodes.getNode(config.server);
+            this.defaults = config;
+            this.on('input', this.onInput);
+        }
+
+        onInput(input) {
+            if (!input.requestArray) {
+                this.error('requestArray not provided for Bacnet read multiple.')
+                return;
+            }
+            const { address } = Object.assign({}, this.defaults, input.device);
+            this.server.connection.readPropertyMultiple(
+                address,
+                input.requestArray,
+            )
+                .then((payload) => {
+                    const message = Object.assign({}, input, { payload: payload });
+                    this.send(message);
+                })
+                .catch((error) => this.error({ error: error }));
+        };
+    }
+    RED.nodes.registerType('bacnet-read-multiple', BacnetReadPropertyMultiple);
+    
+        /**
+     * Bacnet Write Property Multiple
+     *
+     * The writePropertyMultiple command writes multiple properties to multiple device objects
+     */
+    class BacnetWritePropertyMultiple {
+        constructor(config) {
+            RED.nodes.createNode(this, config);
+            this.server = RED.nodes.getNode(config.server);
+            this.defaults = config;
+            this.on('input', this.onInput);
+        }
+
+        onInput(input) {
+            if (!input.valueList) {
+                this.error('valueList not provided for Bacnet write multiple.');
+                return;
+            }
+
+            const { address } = Object.assign({}, this.defaults, input.device);
+            this.server.connection.writePropertyMultiple(
+                address,
+                input.valueList,
+            )
+                .then(() => this.send(input))
+                .catch((error) => this.error({ error: error }));
+        };
+    }
+    RED.nodes.registerType('bacnet-write-multiple', BacnetWritePropertyMultiple);
 };
