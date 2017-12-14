@@ -19,18 +19,12 @@
 
 <script type="text/x-red" data-help-name="bacnet-server">
     <p>To be able to communicate to BACNET devices, you have to initialize a new client instance.</p>
-    <p>
-        <ul>
-            <li><code>option</code> <em>[object]</em> - The options object used for parameterising the bacstack.
-                <ul>
-                    <li><code>port</code> <em>[number]</em> - BACNET communication port for listening and sending. Default is <code>47808</code>. <em>Optional</em>.</li>
-                    <li><code>interface</code> <em>[string]</em> - Specific BACNET communication interface if different from primary one. <em>Optional</em>.</li>
-                    <li><code>broadcastAddress</code> <em>[string]</em> - The address used for broadcast messages. Default is <code>255.255.255.255</code>. <em>Optional</em>.</li>
-                    <li><code>adpuTimeout</code> <em>[number]</em> - The timeout in milliseconds until a transaction should be interpreted as error. Default is <code>3000</code>. <em>Optional</em>.</li>
-                </ul>
-            </li>
-        </ul>
-    </p>
+    <ul>
+        <li><code>interface</code> <em>[string]</em> - Specific BACNET communication interface if different from primary one. <em>Optional</em>.</li>
+        <li><code>port</code> <em>[number]</em> - BACNET communication port for listening and sending. Default is <code>47808</code>. <em>Optional</em>.</li>
+        <li><code>broadcastAddress</code> <em>[string]</em> - The address used for broadcast messages. Default is <code>255.255.255.255</code>. <em>Optional</em>.</li>
+        <li><code>adpuTimeout</code> <em>[number]</em> - The timeout in milliseconds until a transaction should be interpreted as error. Default is <code>3000</code>. <em>Optional</em>.</li>
+    </ul>
 </script>
 
 <script type="text/javascript">
@@ -38,16 +32,16 @@
         category: 'config',
         defaults: {
             interface: {
-                value: '', required: true
+                value: '', required: false
             },
             port: {
                 value: 47808,
-                required: true,
+                required: false,
                 validate: RED.validators.number()
             },
             broadcastAddress: {
                 value: '255.255.255.255',
-                required: true
+                required: false
             },
             timeout: {
                 value: 3000,
@@ -96,6 +90,19 @@
         <li><code>highLimit</code> <em>[number]</em> - Maximal device instance number to search for. <em>Optional</em>.</li>
         <li><code>address</code> <em>[string]</em> - Unicast address if command should device directly. <em>Optional</em>.</li>
     </ul>
+    <h3>Output <code>message.payload</code></h3>
+    <dl class="message-properties">
+        <dt>address <span class="property-type">string</span></dt>
+        <dd>IP address of the detected device.</dd>
+        <dt>deviceId <span class="property-type">number</span></dt>
+        <dd>Bacnet device id.</dd>
+        <dt>maxAdpu <span class="property-type">number</span></dt>
+        <dd>Max ADPU size the device is supporting.</dd>
+        <dt>segmentation <span class="property-type">number</span></dt>
+        <dd>Type of segmentation the device is supporting.</dd>
+        <dt>vendorId <span class="property-type">number</span></dt>
+        <dd>Bacnet vendor id.</dd>
+    </dl>
 </script>
 
 <script type="text/javascript">
@@ -127,7 +134,7 @@
         },
         inputs: 0,
         outputs: 1,
-        // icon: 'automation.gif',
+        icon: 'automation.gif',
         paletteLabel: 'BACnet',
         label: function() {
             return (this.name || 'BACnet whoIs');
@@ -173,7 +180,7 @@
 </script>
 
 <script type="text/x-red" data-help-name="bacnet-read">
-    <p>The <code>readProperty</code> command reads a single property of an object from a device.</p>
+    <p>The <code>readProperty</code> command reads a single property of an object from a device. It accepts an input whose device property will override the properties set here.</p>
     <ul>
         <li><code>address</code> <em>[string]</em> - IP address of the target device.</li>
         <li><code>objectType</code> <em>[number]</em> - The BACNET object type to read.</li>
@@ -193,21 +200,21 @@
             },
             address: {
                 value: '',
-                required: true
+                required: false
             },
             objectType: {
                 value: '',
-                required: true,
+                required: false,
                 validate: RED.validators.number()
             },
             objectInstance: {
                 value: '',
-                required: true,
+                required: false,
                 validate: RED.validators.number()
             },
             propertyId: {
                 value: '',
-                required: true,
+                required: false,
                 validate: RED.validators.number()
             },
             arrayIndex: {
@@ -218,9 +225,9 @@
                 type: 'bacnet-server'
             }
         },
-        inputs: 0,
+        inputs: 1,
         outputs: 1,
-        // icon: 'automation.gif',
+        icon: 'automation.gif',
         paletteLabel: 'BACnet read',
         label: function() {
             return (this.name || 'BACnet read');
@@ -240,12 +247,12 @@
     </div>
 
     <div class="form-row">
-        <label for="node-input-objectType"><i class="icon-bookmark"></i> Type</label>
+        <label for="node-input-objectType"><i class="icon-bookmark"></i>Object Type</label>
         <input type="text" id="node-input-objectType" placeholder="Object Type">
     </div>
 
     <div class="form-row">
-        <label for="node-input-objectInstance"><i class="icon-bookmark"></i> Instance</label>
+        <label for="node-input-objectInstance"><i class="icon-bookmark"></i>Object Instance</label>
         <input type="text" id="node-input-objectInstance" placeholder="Object Instance">
     </div>
 
@@ -294,7 +301,7 @@
 </script>
 
 <script type="text/x-red" data-help-name="bacnet-write">
-    <p>The <code>writeProperty</code> command writes a single property of an object to a device.</p>
+    <p>The <code>writeProperty</code> command writes a single property of an object to a device. It accepts an input whose payload will override the properties set here.</p>
     <ul>
         <li><code>address</code> <em>[string]</em> - IP address of the target device.</li>
         <li><code>objectType</code> <em>[number]</em> - The BACNET object type to write.</li>
@@ -315,21 +322,21 @@
             },
             address: {
                 value: '',
-                required: true
+                required: false
             },
             objectType: {
                 value: '',
-                required: true,
+                required: false,
                 validate: RED.validators.number()
             },
             objectInstance: {
                 value: '',
-                required: true,
+                required: false,
                 validate: RED.validators.number()
             },
             propertyId: {
                 value: '',
-                required: true,
+                required: false,
                 validate: RED.validators.number()
             },
             priority: {
@@ -341,20 +348,170 @@
             },
             value: {
                 value: '',
-                required: true
+                required: false
             },
             server: {
                 value: '',
                 type: 'bacnet-server'
             }
         },
-        inputs: 0,
+        inputs: 1,
         outputs: 1,
-        align: 'right',
-        // icon: 'automation.gif',
+        icon: 'automation.gif',
         paletteLabel: 'BACnet write',
         label: function() {
             return (this.name || 'BACnet write');
+        }
+    });
+</script>
+
+
+<script type="text/x-red" data-template-name="bacnet-read-multiple">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-address"><i class="icon-bookmark"></i> Address</label>
+        <input type="text" id="node-input-address" placeholder="">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="icon-globe"></i> Server</label>
+        <input type="text" id="node-input-server">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="bacnet-read-multiple">
+    <p>The <code>readPropertyMultiple</code> command reads multiple properties from multiple device objects. It accepts address which can be override by input.</p>
+    <p>This node expects input to provide <code>requestyArray</code> property with the target read fields.</p>
+    <h3><code>requestArray</code></h3>
+    <dl class="message-properties">
+        <dt>objectIdentifier <span class="property-type">object</span></dt>
+        <dd>
+            <span>Specific object to read.</span>
+            <dl class="message-properties">
+                <dt>type <span class="property-type">number</span></dt>
+                <dd>Bacnet object type to read</dd>
+                <dt>instance <span class="property-type">number</span></dt>
+                <dd>Bacnet object instance to read.</dd>
+            </dl>
+        </dd>
+        <dt>propertyReferences <span class="property-type">Array&lt;object&gt;</span></dt>
+        <dd>
+            <span>List of properties to read.</span>
+            <dl class="message-properties">
+                <dt>propertyIdentifier <span class="property-type">number</span></dt>
+                <dd>Bacnet property id to read. Supports 8 for all properties.</dd>
+            </dl>
+        </dd>
+    </dl>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('bacnet-read-multiple', {
+        category: 'bacnet',
+        color: '#E9967A',
+        defaults: {
+            address: {
+                value: '',
+                required: false
+            },
+            server: {
+                value: '',
+                type: 'bacnet-server'
+            }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'automation.gif',
+        paletteLabel: 'BACnet read multiple',
+        label: function() {
+            return (this.name || 'BACnet read multiple');
+        }
+    });
+</script>
+
+
+<script type="text/x-red" data-template-name="bacnet-write-multiple">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-address"><i class="icon-bookmark"></i> Address</label>
+        <input type="text" id="node-input-address" placeholder="">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="icon-globe"></i> Server</label>
+        <input type="text" id="node-input-server">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="bacnet-write-multiple">
+    <p>The <code>writePropertyMultiple</code> command writes multiple properties to multiple device objects. It accepts address which can be override by input.</p>
+    <p>This node expects input to provide <code>valueList</code> property with the target write fields.</p>
+    <h3><code>valueList</code></h3>
+    <dl class="message-properties">
+        <dt>objectIdentifier <span class="property-type">object</span></dt>
+        <dd>
+            <span>Specific object to read.</span>
+            <dl class="message-properties">
+                <dt>type <span class="property-type">number</span></dt>
+                <dd>Bacnet object type to read</dd>
+                <dt>instance <span class="property-type">number</span></dt>
+                <dd>Bacnet object instance to read.</dd>
+            </dl>
+        </dd>
+        <dt>values <span class="property-type">Array&lt;object&gt;</span></dt>
+        <dd>
+            <span>List of properties to be written.</span>
+            <dl class="message-properties">
+                <dt>property <span class="property-type">object</span></dt>
+                <dd>
+                    <dl class="message-properties">
+                        <dt>propertyIdentifier <span class="property-type">number</span></dt>
+                        <dd>Bacnet property id to write.</dd>
+                        <dt>propertyArrayIndex <span class="property-type">number</span></dt>
+                        <dd>Array index of property to write.</dd>
+                    </dl>
+                </dd>
+                <dt>value <span class="property-type">Array&lt;object&gt;</span></dt>
+                <dd>
+                    <span>List of values to be written to the specified property.</span>
+                    <dl class="message-properties">
+                        <dt>type <span class="property-type">number</span></dt>
+                        <dd>Data type of value to write.</dd>
+                        <dt>value <span class="property-type">any</span></dt>
+                        <dd>Actual value to write.</dd>
+                    </dl>
+                </dd>
+                <dt>priority <span class="property-type">number</span></dt>
+                <dd>Priority used for writing to property.</dd>
+            </dl>
+        </dd>
+    </dl>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('bacnet-write-multiple', {
+        category: 'bacnet',
+        color: '#E9967A',
+        defaults: {
+            address: {
+                value: '',
+                required: false
+            },
+            server: {
+                value: '',
+                type: 'bacnet-server'
+            }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'automation.gif',
+        paletteLabel: 'BACnet write multiple',
+        label: function() {
+            return (this.name || 'BACnet write multiple');
         }
     });
 </script>
